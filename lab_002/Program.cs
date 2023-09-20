@@ -3,4 +3,15 @@
 // потоков. Измерить время программы для N = 1, 2, 4, 10. Измерить работы время
 // программы в каждом случае.
 
-Console.WriteLine("Hello, World!");
+using lab_002;
+
+const int NumberOfStrings = 300;
+const int StringLength = 200000;
+var N = new int[]{ 1, 2, 4, 10 };
+
+
+var array = Enumerable.Range(0, NumberOfStrings)
+    .Select(_ => StringGenerator.GenerateNumericString(StringLength))
+    .ToArray();
+
+Console.WriteLine(array);
