@@ -14,22 +14,23 @@ var array = Enumerable.Range(0, NumberOfStrings)
     .Select(_ => StringGenerator.GenerateNumericString(StringLength))
     .ToArray();
 
-var locker = new object();
 foreach (var numberOfThreads in N)
 {
-    int threadSliceSize = NumberOfStrings / numberOfThreads;
-    int[] threadEvenCounts = new int[numberOfThreads];
-    int[] threadOddCounts = new int[numberOfThreads];
+    var threadSliceSize = NumberOfStrings / numberOfThreads;
+    var threadEvenCounts = new int[NumberOfStrings, numberOfThreads];
+    var threadOddCounts = new int[NumberOfStrings, numberOfThreads];
+    var evenCounts = new int[NumberOfStrings];
+    var oddCounts = new int[NumberOfStrings];
 
-    List<Thread> threads = new List<Thread>();
+    var threads = new Thread[numberOfThreads];
 
     for (int i = 0; i < numberOfThreads; i++)
     {
-        int localIndex = i;
-        Thread thread = new Thread(() =>
+        var localIndex = i;
+        var thread = new Thread(() =>
         {
             int start = localIndex * threadSliceSize;
-            int end = (localIndex == numberOfThreads - 1) ? NumberOfStrings : start + threadSliceSize;
+            var end = (localIndex == numberOfThreads - 1) ? NumberOfStrings : start + threadSliceSize;
 
             for (int lineIndex = start; lineIndex < end; lineIndex++)
             {
@@ -37,16 +38,16 @@ foreach (var numberOfThreads in N)
                 {
                     if ((c - '0') % 2 == 0)
                     {
-                        threadEvenCounts[localIndex]++;
+                        threadEvenCounts[lineIndex, localIndex]++;
                     }
                     else
                     {
-                        threadOddCounts[localIndex]++;
+                        threadOddCounts[lineIndex, localIndex]++;
                     }
                 }
             }
         });
-        threads.Add(thread);
+        threads[i] = thread;
     }
 
     var stopwatch = new Stopwatch();
@@ -59,12 +60,28 @@ foreach (var numberOfThreads in N)
     {
         thread.Join();
     }
-    int totalEvenCount = threadEvenCounts.Sum();
-    int totalOddCount = threadOddCounts.Sum();
+    for(int i = 0; i < NumberOfStrings; i++)
+    {
+        for(int j = 0; j < numberOfThreads; j++)
+        {
+            evenCounts[i] += threadEvenCounts[i, j];
+            oddCounts[i] += threadOddCounts[i, j];
+        }
+    }
     stopwatch.Stop();
 
-    Console.WriteLine($"Number of even: {totalEvenCount}");
-    Console.WriteLine($"Number of odd: {totalOddCount}");
+    var totalEvenCount = 0;
+    var totalOddCount = 0;
+    for (var lineIndex = 0;  lineIndex < NumberOfStrings; lineIndex++)
+    {
+        totalEvenCount += evenCounts[lineIndex];
+        totalOddCount += oddCounts[lineIndex];
+        Console.WriteLine($"Number of even for line {lineIndex}: {evenCounts[lineIndex]}");
+        Console.WriteLine($"Number of odd for line {lineIndex}: {oddCounts[lineIndex]}");
+    }
+
+    Console.WriteLine($"Total number of even: {totalEvenCount}");
+    Console.WriteLine($"Total number of odd: {totalOddCount}");
     Console.WriteLine($"Threads: {numberOfThreads}");
     Console.WriteLine($"Time: {stopwatch.ElapsedMilliseconds} ms");
     Console.WriteLine();
